@@ -1,0 +1,21 @@
+{
+  "name": "cie.flowtype",
+  "description": "A Cloud9 plugin which runs FlowType type checker.",
+  "version": "0.0.1",
+  "author": "cie",
+  "contributors": [
+    {
+      "name": "",
+      "email": ""
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cie/cie.flowtype.git"
+  },
+  "plugins": {
+    "flowtype": {}
+  },
+  "categories": ["miscellaneous"],
+  "licenses": []
+}
