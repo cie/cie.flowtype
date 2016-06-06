@@ -26,12 +26,13 @@ define(function(require, exports, module) {
             callback([{ pos: { sl: 0 }, message: "Flowtype is still initializing...", level: "error" }]);
         }, 3000)
         
-        workerUtil.execAnalysis(
-            "bash",
+        var cmd = 'echo "'+docValue.replace(/([\\"$`])/g, "\\$1")+'" | flow check-contents --retry-if-init=false --json ' + filePath.replace(/([^a-zA-Z0-9_\/~.-])/g, "\\$1");
+        console.log(cmd);
+        workerUtil.execFile(
+            "/bin/bash",
             {
-                mode: "stdin",
-                args: ['-c', 'flow check-contents --retry-if-init=false --json ' + filePath.replace(/([^a-zA-Z0-9_\/~.-])/g, "\\$1")], 
-                maxCallInterval: 1200,
+                args: ['-c', cmd], 
+                maxCallInterval: 50,
                 timeout: 4000,
                 semaphore: null, 
             },
@@ -39,6 +40,7 @@ define(function(require, exports, module) {
                 if (timeouted) return;
                 finished = true;
                 console.log(stdout, stderr)
+                
                 if (!stdout && !stderr) return callback([{ pos: { sl: 0 }, message: "Flowtype is still analyzing...", level: "error" }]); // no flow installed
                 if (err && err.code === 127) return callback([{ pos: { sl: 0 }, message: "No flow installed.", level: "error" }]); // no flow installed
                 if (err && err.code === 12) return callback([{ pos: { sl: 0 }, message: "No .flowconfig in any parent directory.", level: "info" }]); // no .flowconfig
@@ -46,9 +48,12 @@ define(function(require, exports, module) {
                 if (err && err.code !== 255 && err.code !== 2) {
                     return callback([{ pos: { sl: 0 }, message: "Flow problem: " + err.message, level: "error" }]);
                 }
-    
-                // Parse each line of output and create marker objects
-                if (typeof stdout === "string") return callback([{ pos: { sl: 0 }, message: "Flow problem: " + stdout + stderr, level: "error" }]);
+                
+                try {
+                    stdout = JSON.parse(stdout)
+                } catch (e) {
+                    return callback([{ pos: { sl: 0 }, message: "Flow problem: " + stdout + stderr, level: "error" }]);
+                }
                 
                 var markers = [];
                 function isThisFile(m) { return m.path.endsWith(basename) } // TODO weak heuristics - possible false positives if filenames are the same
@@ -66,20 +71,6 @@ define(function(require, exports, module) {
                         })
                     })
                 })
-                /*(stdout + stderr).split("\n").forEach(function parseLine(line) {
-                    console.log(line)
-                    var match = line.match(/(hello) (\d+)/);
-                    if (!match)
-                        return;
-                    var message = match[1];
-                    var row = match[2];
-                    
-                    markers.push({
-                        pos: { sl: parseInt(row, 10) - 1, sc: 3, ec: 9 },
-                        message: message,
-                        level: message.match(/error/) ? "error": "warning"
-                    });
-                });*/
                 
                 if (markers.length === 0) {
                     markers.push({pos: { sl: 0 }, level: "info", message: "No errors."});
