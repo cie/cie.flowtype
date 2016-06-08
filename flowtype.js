@@ -9,7 +9,7 @@ define(function(require, exports, module) {
         var language = imports.language;
 
         plugin.on("load", function () {
-            //language.unregisterLanguageHandler("plugins/c9.ide.language.javascript.eslint/worker/eslint_worker");
+            language.unregisterLanguageHandler("plugins/c9.ide.language.javascript.tern/worker/tern_worker");
             language.registerLanguageHandler("plugins/cie.flowtype/worker/flowtype_worker", function(err, handler) {
                 if (err) { console.error(err) }
             });
