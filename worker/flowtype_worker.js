@@ -123,7 +123,7 @@ define(function(require, exports, module) {
     
     handler.jumpToDefinition = function(doc, ast, pos, options, callback) {
         var filePath = getFilePath()
-        callFlow("get-def --json %FILE " + (pos.row + 1) + " " + (pos.column + 1), filePath, null, function(stdout) {
+        callFlow("get-def --json %FILE " + (pos.row + 1) + " " + (pos.column + 1 - 1), filePath, null, function(stdout) {
             if (!stdout.line && !stdout.path) return callback(null)
             if (stdout.path.endsWith(require("path").basename(filePath))) { // TODO weak heuristics
                 stdout.path = ""
