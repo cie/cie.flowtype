@@ -67,11 +67,18 @@ define(function(require, exports, module) {
         callFlow("check-contents --retry-if-init=false --json %FILE", filePath, docValue, function(stdout) {
             var markers = [];
             function isThisFile(m) { return m.path.endsWith(basename) } // TODO weak heuristics - possible false positives if filenames are the same
-            stdout.errors.forEach(function(e) { 
+            function makeMessage(e) {
                 var message = e.message.map(function(m){
-                    if (!isThisFile(m)) return m.descr + (m.path ? ("("+m.path+":"+m.line+")") : "");
+                    if (m.path && !isThisFile(m)) return m.descr + " ("+require("path").basename(m.path)+":"+m.line+")";
                     return m.descr;
                 }).join(": ");
+                if (e.extra) {
+                    message += "\n" + e.extra.map(makeMessage).join("\n")
+                }
+                return message
+            }
+            stdout.errors.forEach(function(e) { 
+                var message = makeMessage(e)
                 e.message.forEach(function(m) {
                     if (!isThisFile(m)) return // TODO weak heuristics - possible false positives if filenames are the same
                     markers.push({
@@ -105,14 +112,19 @@ define(function(require, exports, module) {
                     isContextual: true,
                 }
             }));
-        }, function() {
-            callback(Error("Flow is still initializing"))
+        }, function(problem) {
+            return {
+                name: problem,
+                docHead: "Error",
+                doc: problem,
+                isContextual: true,
+            }
         })
     };
     
-    /*handler.getCompletionRegex = function() {
-        return /^\.$/
-    }*/
+    handler.getCompletionRegex = function() {
+        return /^[a-zA-Z]$/
+    }
     
     /* TODO
     handler.tooltip = function(doc, ast, pos, options, callback) {
